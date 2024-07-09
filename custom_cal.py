@@ -1,97 +1,111 @@
 import csv
 from datetime import datetime, timedelta
+import calendar
 
 #change these parameters to create different calendars
-start_date = datetime(year=2023, month=4, day=1)
-end_date = datetime(year=2023, month=4, day=15)
+start_date = datetime(year=2023, month=1, day=29)
+end_date = datetime(year=2024, month=2, day=28)
+
+
+
 calendar_type = '4-4-5'
-monthly_offset = 'April'
+
+
+# Sunday = 1, Monday =2
 start_day_of_week = 1
-# 1 = Mon
 
 
-print(int(start_date.strftime('%w')) + start_day_of_week)
-
-
-
-print("************* Default Variables ************* \n",
-      "Calendar Type:",calendar_type,
-      "\n Start day of week: " , start_day_of_week,
-      "\n******************************************* ")
-
-
-def generate_calendar(start_date, end_date, calendar_type=calendar_type, monthly_offset=monthly_offset):
+def generate_calendar(start_date, end_date, calendar_type=calendar_type):
     current_date = start_date
+
+    last_year_date = start_date - timedelta(days=1)
+    last_year = last_year_date.strftime('%Y')
+
     date_data = []
-    week_counter = 0
-    starting_week_number = int(start_date.strftime('%W')) -1
+    week_of_year = 0
+    week_of_quarter = 0
+    week_of_month = 0
     quarter = 1
-    starting_week_quarter = 1
-    week_number_of_quarter = 1
-    print
+    year = int(last_year) +1
+    day_number_of_month = current_date.day
+    day_number_of_quarter = 0
+    day_number_of_year = 0
 
     while current_date <= end_date:
-
-        # Extract basic date components
         date = current_date.strftime('%Y-%m-%d')
+        day_number_of_quarter +=1
+        day_number_of_year +=1
+
+        # Make day of week and start of week adjustments
         weekday_name = current_date.strftime('%A')
-        day_of_week = current_date.strftime('%w')
 
-        # Calculate the Day of the week
-        if start_day_of_week == "Sunday":
-            if weekday_name == "Sunday":
-                day_of_week = 1
-            elif weekday_name == "Monday":
-                day_of_week = 2
-            elif weekday_name =="Tuesday":
-                day_of_week = 3
-            elif weekday_name == "Wednesday":
-                day_of_week = 4
-            elif weekday_name == "Thursday":
-                day_of_week = 5
-            elif weekday_name =="Friday":
-                day_of_week = 6
+        # Get the weekday number (Monday is 0 and Sunday is 6)
+        weekday_number = current_date.weekday()
+
+        # Adjust the weekday number for Sunday Start: weekday = 0
+        if start_day_of_week == 1:
+            if weekday_number == 6:
+                adjusted_weekday_number = 1
+                week_of_year +=1
+                week_of_quarter  += 1
+                week_of_month +=1
+                month = current_date.strftime('%B')
+
+            elif weekday_number == 0:
+                adjusted_weekday_number = 2
             else:
-                day_of_week = 7
+                adjusted_weekday_number +=1
 
-        month = current_date.strftime('%B')
+        # Adjust the weekday number for Monday Start:  weekday = 1
+        elif start_day_of_week ==2:
+            if weekday_number == 1:
+                week_of_year +=1
+                week_of_quarter  +=1
+                week_of_month +=1
+                month = current_date.strftime('%B')
+
+        # Calculate the quarter and week of quarter. All Calendars have 4 quarters with 13 weeks
+        if week_of_year == 53:
+            quarter = 1
+            week_of_year =1
+            day_number_of_year = 0
+            week_of_quarter = 1
+            week_of_month = 1
+            year +=1
+        elif week_of_year == 40:
+            quarter = 4
+            week_of_quarter = 1
+            week_of_month = 1
+            day_number_of_quarter =1
+        elif week_of_year == 27:
+            quarter = 3
+            week_of_quarter = 1
+            week_of_month = 1
+            day_number_of_quarter =1
+        elif week_of_year == 14:
+            quarter = 2
+            week_of_quarter = 1
+            week_of_month = 1
+            day_number_of_quarter =1
+
+        # Calculate the week of month by calendar type
+        if week_of_quarter == 9:
+            week_of_month = 1
+        elif week_of_quarter == 5 :
+            week_of_month = 1
+
+
+
         is_weekend = 'Yes' if current_date.strftime('%w') in ['0', '6'] else 'No'
         absolute_week_number = current_date.strftime('%W')
 
-        #fixme - this is not calculating corrently because of the starting weekday
-        week_number_of_month = (current_date.day - 1) // 7 + 1
-        week_number_of_year =int(current_date.strftime('%W')) - int(starting_week_number)
-        year = current_date.strftime('%Y')
+
+        # year = current_date.strftime('%Y')
 
         # Handle custom calendar types
         if calendar_type == '4-4-5':
-            print("\n-----\n")
-            print("** Date: ",  date)
-            print("** Weekday: ",weekday_name)
-            print("** Day of Week: ", day_of_week)
-
-            if week_number_of_year > 38:
-                if week_number_of_year == 39:
-                    week_number_of_quarter = 1
-                quarter = 4
-
-            elif week_number_of_year > 25:
-                if week_number_of_year == 26:
-                    week_number_of_quarter = 1
-                quarter = 3
-            elif week_number_of_year > 12:
-                if week_number_of_year == 13:
-                    week_number_of_quarter = 1
-                quarter = 2
-            else:
-                if week_number_of_year == 1:
-                    week_number_of_quarter = 1
-                quarter = 1
-
-
             # Determine day, month, quarter, year details
-            day_number_of_month = current_date.day
-            day_number_of_quarter = (current_date - datetime(year=current_date.year, month=(current_date.month - 1) // 3 * 3 + 1, day=1)).days + 1
+
             day_number_of_year = (current_date - datetime(year=current_date.year, month=1, day=1)).days + 1
             month_number_of_quarter = current_date.month % 3 or 3
             month_number_of_year = current_date.month
@@ -100,49 +114,23 @@ def generate_calendar(start_date, end_date, calendar_type=calendar_type, monthly
             start_of_week_epoch = (current_date - timedelta(days=current_date.weekday())).strftime('%Y-%m-%d')
             end_of_week_epoch = (current_date + timedelta(days=6 - current_date.weekday())).strftime('%Y-%m-%d')
 
-            print("** Month: ", month)
-            print("** Week of Month: ",week_number_of_month)
-            print("** Week of Year: ", week_number_of_year)
-            print("** Quarter: ", quarter)
-            print("** Week of Quarter: ", week_number_of_quarter)
 
-            week_number_of_quarter += 1
-
-
-            date_data.append([
-                date, weekday_name, day_of_week, month, quarter, year,
-                week_number_of_month, week_number_of_quarter,
-                week_number_of_year, is_weekend, day_number_of_month, day_number_of_quarter,
-                day_number_of_year, month_number_of_quarter, month_number_of_year,
-                absolute_week_number, start_of_week_epoch, end_of_week_epoch
-            ])
-
-            # while current_date.strftime('%w') != '1':  # Skip until we reach Monday
+            if adjusted_weekday_number == 1:
+                date_data.append([
+                    date, weekday_name, adjusted_weekday_number, month, quarter, year,
+                    week_of_month, week_of_quarter,
+                    week_of_year, is_weekend, day_number_of_month, day_number_of_quarter,
+                    day_number_of_year, month_number_of_quarter, month_number_of_year,
+                    absolute_week_number, start_of_week_epoch, end_of_week_epoch
+                ])
+            # date_data.append([
+            #     increment,date, weekday_name, adjusted_weekday_number, month, quarter, year,
+            #     week_of_month, week_of_quarter,
+            #     week_of_year, is_weekend, day_number_of_month, day_number_of_quarter,
+            #     day_number_of_year, month_number_of_quarter, month_number_of_year,
+            #     absolute_week_number, start_of_week_epoch, end_of_week_epoch
+            # ])
             current_date += timedelta(days=1)
-        elif calendar_type == '4-5-4':
-            if current_date.month in [1, 3, 5, 7, 8, 10, 12]:
-                if current_date.day == 29:
-                    current_date += timedelta(days=3)
-            elif current_date.month == 2:
-                if current_date.day == 29:
-                    current_date += timedelta(days=2)
-                elif current_date.day == 28:
-                    current_date += timedelta(days=1)
-        elif calendar_type == '5-4-4':
-            if current_date.month in [1, 3, 5, 7, 8, 10, 12]:
-                if current_date.day == 30:
-                    current_date += timedelta(days=3)
-                elif current_date.day == 31:
-                    current_date += timedelta(days=2)
-            elif current_date.month == 2:
-                if current_date.day == 28:
-                    current_date += timedelta(days=3)
-                elif current_date.day == 29:
-                    current_date += timedelta(days=2)
-
-        # Handle monthly offset
-        # if current_date.month == datetime.strptime(monthly_offset, '%B').month:
-        #     current_date += timedelta(days=1)
 
     return date_data
 
@@ -160,7 +148,7 @@ def write_to_csv(filename, data):
 
 def main():
 
-    date_data = generate_calendar(start_date, end_date, calendar_type, monthly_offset)
+    date_data = generate_calendar(start_date, end_date, calendar_type)
 
     filename = f'{calendar_type}_calendar.csv'
     write_to_csv(filename, date_data)
